@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8"/>
   <title>Singapore WBGT Live</title>
   <style>
     body { font-family: Arial, sans-serif; text-align: center; padding: 2rem; }
@@ -20,37 +20,39 @@
   <script>
     async function fetchWBGT() {
       try {
-        const today = new Date().toISOString().split("T")[0];
-        const resp = await fetch(`https://api.data.gov.sg/v1/environment/wbgt?date=${today}`);
+        // fetch latest observation from API
+        const resp = await fetch("https://api.data.gov.sg/v1/environment/wbgt");
         const data = await resp.json();
-        const readings = data.items[0]?.readings || [];
-        if (readings.length === 0) {
-          document.getElementById("wbgt").innerText = "No data";
+        const readings = data.items?.[0]?.readings || [];
+
+        if (!readings || readings.length === 0) {
+          document.getElementById("wbgt").innerText = "No recent data";
           document.getElementById("level").innerText = "";
           return;
         }
 
+        // get the *latest* value
         const latest = readings[readings.length - 1].value;
         document.getElementById("wbgt").innerText = latest.toFixed(1) + " °C";
 
-        let levelText = "";
-        let className = "";
-        if (latest < 31) { levelText = "Low Heat Stress"; className = "low"; }
+        // categorize heat stress level
+        let levelText, className;
+        if (latest < 31)      { levelText = "Low Heat Stress";      className = "low"; }
         else if (latest < 33) { levelText = "Moderate Heat Stress"; className = "moderate"; }
-        else { levelText = "High Heat Stress"; className = "high"; }
+        else                  { levelText = "High Heat Stress";     className = "high"; }
 
-        const levelDiv = document.getElementById("level");
-        levelDiv.innerText = levelText;
-        levelDiv.className = className;
+        document.getElementById("level").innerText = levelText;
+        document.getElementById("level").className = className;
+
       } catch (err) {
-        document.getElementById("wbgt").innerText = "Error loading data";
+        document.getElementById("wbgt").innerText = "Error retrieving data";
         document.getElementById("level").innerText = "";
         console.error(err);
       }
     }
 
     fetchWBGT();
-    setInterval(fetchWBGT, 15 * 60 * 1000); // Refresh every 15 minutes
+    setInterval(fetchWBGT, 15 * 60 * 1000);  // update every 15 minutes
   </script>
 </body>
 </html>
