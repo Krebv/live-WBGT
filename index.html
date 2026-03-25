@@ -2,7 +2,7 @@
 <html>
 <head>
   <meta charset="UTF-8"/>
-  <title>WBGT at Woodlands Stadium (Live)</title>
+  <title>WBGT at Woodlands (Live)</title>
   <style>
     body { font-family: Arial, sans-serif; text-align: center; padding: 2rem; }
     #wbgt { font-size: 3rem; margin: 1rem 0; }
@@ -13,39 +13,41 @@
   </style>
 </head>
 <body>
-  <h1>WBGT at Woodlands Stadium (Live)</h1>
+  <h1>WBGT at Woodlands (Live)</h1>
   <div id="wbgt">Loading…</div>
   <div id="level"></div>
 
   <script>
-    async function fetchWBGTForWoodlands() {
+    async function fetchWBGTAtWoodlands() {
       try {
-        // Fetch real-time WBGT observations
-        const resp = await fetch("https://api.data.gov.sg/v1/environment/wbgt");
-        const data = await resp.json();
-        const items = data.items[0];
-        const readings = items?.readings || [];
+        const response = await fetch("https://api.data.gov.sg/v1/environment/wbgt");
+        const json = await response.json();
 
-        // Find the reading for Woodlands Stadium / Woodlands Street 13
-        const record = readings.find(r => r.station_id === "S125" || r.station_name?.includes("Woodlands"));
-        if (!record) {
-          document.getElementById("wbgt").innerText = "No Woodlands data";
+        // 'items' holds the array of time slices; take the most recent one
+        const latestData = json.items[0];
+        const readings = latestData?.readings || [];
+
+        // Filter for station ID S125 (Woodlands Street 13)
+        const station = readings.find(r => r.station_id === "S125");
+
+        if (!station) {
+          document.getElementById("wbgt").innerText = "No Woodlands reading yet";
           document.getElementById("level").innerText = "";
           return;
         }
 
-        const latest = record.value;
-        document.getElementById("wbgt").innerText = latest.toFixed(1) + " °C";
+        const value = station.value;
+        document.getElementById("wbgt").innerText = value.toFixed(1) + " °C WBGT";
 
-        // Determine heat stress
-        let levelText, className;
-        if (latest < 31)      { levelText = "Low Heat Stress";      className = "low"; }
-        else if (latest < 33) { levelText = "Moderate Heat Stress"; className = "moderate"; }
-        else                  { levelText = "High Heat Stress";     className = "high"; }
+        let text, cls;
+        if (value < 31)      { text = "Low Heat Stress";      cls = "low"; }
+        else if (value < 33) { text = "Moderate Heat Stress"; cls = "moderate"; }
+        else                  { text = "High Heat Stress";     cls = "high"; }
 
         const levelDiv = document.getElementById("level");
-        levelDiv.innerText = levelText;
-        levelDiv.className = className;
+        levelDiv.innerText = text;
+        levelDiv.className = cls;
+
       } catch (err) {
         document.getElementById("wbgt").innerText = "Error retrieving data";
         document.getElementById("level").innerText = "";
@@ -53,8 +55,9 @@
       }
     }
 
-    fetchWBGTForWoodlands();
-    setInterval(fetchWBGTForWoodlands, 15 * 60 * 1000); // Refresh every 15 minutes
+    // Initial fetch + automatic refresh every 15 minutes
+    fetchWBGTAtWoodlands();
+    setInterval(fetchWBGTAtWoodlands, 15 * 60 * 1000);
   </script>
 </body>
 </html>
