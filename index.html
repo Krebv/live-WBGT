@@ -2,7 +2,7 @@
 <html>
 <head>
   <meta charset="UTF-8"/>
-  <title>Singapore WBGT Live</title>
+  <title>WBGT at Woodlands Stadium (Live)</title>
   <style>
     body { font-family: Arial, sans-serif; text-align: center; padding: 2rem; }
     #wbgt { font-size: 3rem; margin: 1rem 0; }
@@ -13,37 +13,39 @@
   </style>
 </head>
 <body>
-  <h1>Singapore WBGT Heat Stress (Live)</h1>
+  <h1>WBGT at Woodlands Stadium (Live)</h1>
   <div id="wbgt">Loading…</div>
   <div id="level"></div>
 
   <script>
-    async function fetchWBGT() {
+    async function fetchWBGTForWoodlands() {
       try {
-        // fetch latest observation from API
+        // Fetch real-time WBGT observations
         const resp = await fetch("https://api.data.gov.sg/v1/environment/wbgt");
         const data = await resp.json();
-        const readings = data.items?.[0]?.readings || [];
+        const items = data.items[0];
+        const readings = items?.readings || [];
 
-        if (!readings || readings.length === 0) {
-          document.getElementById("wbgt").innerText = "No recent data";
+        // Find the reading for Woodlands Stadium / Woodlands Street 13
+        const record = readings.find(r => r.station_id === "S125" || r.station_name?.includes("Woodlands"));
+        if (!record) {
+          document.getElementById("wbgt").innerText = "No Woodlands data";
           document.getElementById("level").innerText = "";
           return;
         }
 
-        // get the *latest* value
-        const latest = readings[readings.length - 1].value;
+        const latest = record.value;
         document.getElementById("wbgt").innerText = latest.toFixed(1) + " °C";
 
-        // categorize heat stress level
+        // Determine heat stress
         let levelText, className;
         if (latest < 31)      { levelText = "Low Heat Stress";      className = "low"; }
         else if (latest < 33) { levelText = "Moderate Heat Stress"; className = "moderate"; }
         else                  { levelText = "High Heat Stress";     className = "high"; }
 
-        document.getElementById("level").innerText = levelText;
-        document.getElementById("level").className = className;
-
+        const levelDiv = document.getElementById("level");
+        levelDiv.innerText = levelText;
+        levelDiv.className = className;
       } catch (err) {
         document.getElementById("wbgt").innerText = "Error retrieving data";
         document.getElementById("level").innerText = "";
@@ -51,8 +53,8 @@
       }
     }
 
-    fetchWBGT();
-    setInterval(fetchWBGT, 15 * 60 * 1000);  // update every 15 minutes
+    fetchWBGTForWoodlands();
+    setInterval(fetchWBGTForWoodlands, 15 * 60 * 1000); // Refresh every 15 minutes
   </script>
 </body>
 </html>
