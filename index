@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Singapore WBGT Live</title>
+  <style>
+    body { font-family: Arial, sans-serif; text-align: center; padding: 2rem; }
+    #wbgt { font-size: 3rem; margin: 1rem 0; }
+    #level { font-size: 2rem; font-weight: bold; }
+    .low { color: green; }
+    .moderate { color: orange; }
+    .high { color: red; }
+  </style>
+</head>
+<body>
+  <h1>Singapore WBGT Heat Stress (Live)</h1>
+  <div id="wbgt">Loading…</div>
+  <div id="level"></div>
+
+  <script>
+    async function fetchWBGT() {
+      try {
+        const today = new Date().toISOString().split("T")[0];
+        const resp = await fetch(`https://api.data.gov.sg/v1/environment/wbgt?date=${today}`);
+        const data = await resp.json();
+        const readings = data.items[0]?.readings || [];
+        if (readings.length === 0) {
+          document.getElementById("wbgt").innerText = "No data";
+          document.getElementById("level").innerText = "";
+          return;
+        }
+
+        const latest = readings[readings.length - 1].value;
+        document.getElementById("wbgt").innerText = latest.toFixed(1) + " °C";
+
+        let levelText = "";
+        let className = "";
+        if (latest < 31) { levelText = "Low Heat Stress"; className = "low"; }
+        else if (latest < 33) { levelText = "Moderate Heat Stress"; className = "moderate"; }
+        else { levelText = "High Heat Stress"; className = "high"; }
+
+        const levelDiv = document.getElementById("level");
+        levelDiv.innerText = levelText;
+        levelDiv.className = className;
+      } catch (err) {
+        document.getElementById("wbgt").innerText = "Error loading data";
+        document.getElementById("level").innerText = "";
+        console.error(err);
+      }
+    }
+
+    fetchWBGT();
+    setInterval(fetchWBGT, 15 * 60 * 1000); // Refresh every 15 minutes
+  </script>
+</body>
+</html>
